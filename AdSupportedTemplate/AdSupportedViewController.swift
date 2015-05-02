@@ -16,24 +16,6 @@ class AdSupportedViewController : UIViewController,
                              GADBannerViewDelegate,
                            GADInterstitialDelegate{
     
-//MARK: Configuration Properties
-    
-    enum AdServiceType {
-        case AppleiAd, GoogleAdMob, AppleiAdWithGoogleAdMobFallback, GoogleAdMobWithAppleiAdFallback
-    }
-    
-    enum AdBannerLocation {
-        case Top, Bottom
-    }
-    
-    var adServiceType = AdServiceType.AppleiAdWithGoogleAdMobFallback //default configuration
-    
-    var adBannerLocation = AdBannerLocation.Top {
-        didSet {
-            updateIAdConstraints()
-            updateAdMobConstraints()
-        }
-    }
     
 //MARK: iAd Properties
     
@@ -55,6 +37,7 @@ class AdSupportedViewController : UIViewController,
     //Google AdMob Banner
     
     var adMobTestDeviceIds = [String]()
+    var adMobAdUnitId: String?
     //NOTE: During development, it is recommended to utilize test ads to avoid generating false impressions. Additionally, you can always count on a test ad being available.
     //Starting in SDK version 7.0.0, simulators will automatically show test ads.
     
@@ -66,6 +49,60 @@ class AdSupportedViewController : UIViewController,
     
     var adMobInterstitialAd : GADInterstitial?
     
+    //MARK: Configuration Properties
+    
+    enum AdServiceMode {
+        case AppleiAd, GoogleAdMob, AppleiAdWithGoogleAdMobFallback, GoogleAdMobWithAppleiAdFallback
+    }
+    
+    enum AdBannerLocation {
+        case Top, Bottom
+    }
+    
+    var adServiceMode = AdServiceMode.AppleiAdWithGoogleAdMobFallback {
+        didSet {
+            
+            removeAdBannerView()
+            removeAdmMobBannerView()
+
+            switch adServiceMode {
+            case .AppleiAd:
+                NSLog("Ad Service Mode: Apple iAd")
+                
+            case .GoogleAdMob:
+                if let adMobAdUnitId = adMobAdUnitId {
+                        NSLog("Ad Service Mode: Google AdMob")
+                }else {
+                    NSLog("Google AdMob AdUnitId is NOT SET! Defaulting to Apple iAd mode")
+                    adServiceMode = .AppleiAd
+                }
+            case .AppleiAdWithGoogleAdMobFallback:
+                if let adMobAdUnitId = adMobAdUnitId {
+                    NSLog("Ad Service Mode: Apple iAd with Google AdMob fallback")
+                }else {
+                    NSLog("Google AdMob AdUnitId is NOT SET! Defaulting to Apple iAd mode")
+                    adServiceMode = .AppleiAd
+                }
+            case .GoogleAdMobWithAppleiAdFallback:
+                if let adMobAdUnitId = adMobAdUnitId {
+                    NSLog("Ad Service Mode: Google AdMob with Apple iAd fallback")
+                }else {
+                    NSLog("Google AdMob AdUnitId is NOT SET! Defaulting to Apple iAd mode")
+                    adServiceMode = .AppleiAd
+                }
+            }
+            setupBannerAd()
+        }
+    }
+    
+    
+    var adBannerLocation = AdBannerLocation.Top {
+        didSet {
+            updateIAdConstraints()
+            updateAdMobConstraints()
+        }
+    }
+
 //MARK: View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -80,6 +117,37 @@ class AdSupportedViewController : UIViewController,
         }, completion: { (context) -> Void in
         
         })
+    }
+    
+//MARK: Combined Ad Controls
+    
+    func setupBannerAd() {
+        switch adServiceMode {
+        case .AppleiAd:
+            setupAdBannerView()
+        case .GoogleAdMob:
+            if let adMobAdUnitId = adMobAdUnitId {
+                setupAdMobBannerView(adMobAdUnitId, testDevices: adMobTestDeviceIds)
+            }
+        case .AppleiAdWithGoogleAdMobFallback:
+            setupAdBannerView()
+        case .GoogleAdMobWithAppleiAdFallback:
+            if let adMobAdUnitId = adMobAdUnitId {
+                setupAdMobBannerView(adMobAdUnitId, testDevices: adMobTestDeviceIds)
+            }
+        }
+    }
+    
+    func toggleBannerAd() {
+        switch adServiceMode {
+        case .AppleiAd:
+            toggleiAdBannerAd()
+        case .GoogleAdMob:
+            toggleAdMobBannerAd()
+        default:
+            toggleiAdBannerAd()
+            toggleAdMobBannerAd()
+        }
     }
     
 //MARK: ADInterstitialAd
@@ -169,7 +237,7 @@ class AdSupportedViewController : UIViewController,
     
     func removeAdBannerView() {
         NSLog("removeAdBannerView")
-        adBannerView!.removeFromSuperview()
+        adBannerView?.removeFromSuperview()
         adBannerView = nil
     }
     
@@ -187,14 +255,22 @@ class AdSupportedViewController : UIViewController,
         switch adBannerLocation {
         case .Top:
             if adBannerView != nil {
+                var constant = -adBannerView!.frame.height
+                if isIAdBannerDisplaying {
+                    constant = 0.0
+                }
                 adBannerViewCenterHorizontalConstraint = NSLayoutConstraint(item: self.view, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal, toItem: adBannerView, attribute: NSLayoutAttribute.CenterX, multiplier: 1.0, constant: 0)
-                adBannerViewTopConstraint = NSLayoutConstraint(item: adBannerView!, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.view, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: 0)
+                adBannerViewTopConstraint = NSLayoutConstraint(item: adBannerView!, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.view, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
                 view.addConstraints([adBannerViewCenterHorizontalConstraint, adBannerViewTopConstraint])
             }
         case .Bottom:
             if adBannerView != nil {
+                var constant = adBannerView!.frame.height
+                if isIAdBannerDisplaying {
+                    constant = 0
+                }
                 adBannerViewCenterHorizontalConstraint = NSLayoutConstraint(item: self.view, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal, toItem: adBannerView, attribute: NSLayoutAttribute.CenterX, multiplier: 1.0, constant: 0)
-                adBannerViewBottomConstraint = NSLayoutConstraint(item: adBannerView!, attribute: NSLayoutAttribute.Bottom, relatedBy: NSLayoutRelation.Equal, toItem: bottomLayoutGuide, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: 0)
+                adBannerViewBottomConstraint = NSLayoutConstraint(item: adBannerView!, attribute: NSLayoutAttribute.Bottom, relatedBy: NSLayoutRelation.Equal, toItem: bottomLayoutGuide, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
                 view.addConstraints([adBannerViewCenterHorizontalConstraint, adBannerViewBottomConstraint])
             }
             default:
@@ -205,8 +281,8 @@ class AdSupportedViewController : UIViewController,
         view.layoutIfNeeded()
     }
     
-    func toggleBannerAd() {
-        NSLog("toggleBannerAd")
+    func toggleiAdBannerAd() {
+        NSLog("toggleiAdBannerAd")
         var tempIsIAdBannerDisplaying = isIAdBannerDisplaying
         
         switch adBannerLocation {
@@ -232,7 +308,7 @@ class AdSupportedViewController : UIViewController,
             }
         default:
             adBannerLocation = .Top
-            toggleBannerAd()
+            toggleiAdBannerAd()
         }
         
         UIView.animateWithDuration(0.4, delay: 0.0, options: UIViewAnimationOptions.CurveEaseInOut, animations: { () -> Void in
@@ -246,7 +322,11 @@ class AdSupportedViewController : UIViewController,
     
     func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
         NSLog("bannerView didFail: \(error.localizedDescription)")
-        toggleBannerAd()
+        if adServiceMode == .AppleiAdWithGoogleAdMobFallback {
+            if let adMobAdUnitId = adMobAdUnitId {
+                setupAdMobBannerView(adMobAdUnitId, testDevices: adMobTestDeviceIds)
+            }
+        }
     }
     
     
@@ -306,7 +386,7 @@ class AdSupportedViewController : UIViewController,
     }
     
     func removeAdmMobBannerView() {
-        adMobBannerView!.removeFromSuperview()
+        adMobBannerView?.removeFromSuperview()
         adMobBannerView = nil
     }
     
@@ -324,14 +404,22 @@ class AdSupportedViewController : UIViewController,
         switch adBannerLocation {
         case .Top:
             if adMobBannerView != nil {
+                var constant = -adMobBannerView!.frame.height
+                if isAdMobBannerDisplaying {
+                    constant = 0
+                }
                 adMobBannerViewCenterHorizontalConstraint = NSLayoutConstraint(item: self.view, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal, toItem: adMobBannerView, attribute: NSLayoutAttribute.CenterX, multiplier: 1.0, constant: 0)
-                adMobBannerViewTopConstraint = NSLayoutConstraint(item: adMobBannerView!, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.view, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: 0)
+                adMobBannerViewTopConstraint = NSLayoutConstraint(item: adMobBannerView!, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.view, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
                 view.addConstraints([adMobBannerViewCenterHorizontalConstraint, adMobBannerViewTopConstraint])
             }
         case .Bottom:
             if adMobBannerView != nil {
+                var constant = adMobBannerView!.frame.height
+                if isAdMobBannerDisplaying {
+                    constant = 0
+                }
                 adMobBannerViewCenterHorizontalConstraint = NSLayoutConstraint(item: self.view, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal, toItem: adMobBannerView, attribute: NSLayoutAttribute.CenterX, multiplier: 1.0, constant: 0)
-                adMobBannerViewBottomConstraint = NSLayoutConstraint(item: adMobBannerView!, attribute: NSLayoutAttribute.Bottom, relatedBy: NSLayoutRelation.Equal, toItem: bottomLayoutGuide, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: 0)
+                adMobBannerViewBottomConstraint = NSLayoutConstraint(item: adMobBannerView!, attribute: NSLayoutAttribute.Bottom, relatedBy: NSLayoutRelation.Equal, toItem: bottomLayoutGuide, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
                 view.addConstraints([adMobBannerViewCenterHorizontalConstraint, adMobBannerViewBottomConstraint])
             }
         default:
@@ -384,6 +472,9 @@ class AdSupportedViewController : UIViewController,
     
     func adView(view: GADBannerView!, didFailToReceiveAdWithError error: GADRequestError!) {
         NSLog("adView didFailToReceiveAdWithError \(GADRequestError.description())")
+        if adServiceMode == .GoogleAdMobWithAppleiAdFallback {
+            setupAdBannerView()
+        }
     }
     
     func adViewDidDismissScreen(adView: GADBannerView!) {
