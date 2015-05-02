@@ -150,9 +150,21 @@ class AdSupportedViewController : UIViewController,
         }
     }
     
+    func requestInterstitialAd() {
+        switch adServiceMode {
+        case .AppleiAd, .AppleiAdWithGoogleAdMobFallback:
+            requestAppleInterstitialAd()
+        case .GoogleAdMob, .GoogleAdMobWithAppleiAdFallback:
+            if let adMobAdUnitId = adMobAdUnitId {
+                requestAdMobInterstitialAd(adMobAdUnitId, testDevices: adMobTestDeviceIds)
+            }
+        }
+        
+    }
+    
 //MARK: ADInterstitialAd
     
-    func requestInterstitialAd() {
+    func requestAppleInterstitialAd() {
         NSLog("requestInterstitialAd")
         interstitialAd = ADInterstitialAd()
         interstitialAd.delegate = self
@@ -210,6 +222,9 @@ class AdSupportedViewController : UIViewController,
     
     func interstitialAd(interstitialAd: ADInterstitialAd!, didFailWithError error: NSError!) {
         NSLog("interstitialAd didFailWithError: \(error.localizedDescription)")
+        if adServiceMode == .AppleiAdWithGoogleAdMobFallback && adMobAdUnitId != nil{
+            requestAdMobInterstitialAd(adMobAdUnitId!, testDevices: adMobTestDeviceIds)
+        }
     }
     
     func interstitialAdDidUnload(interstitialAd: ADInterstitialAd!) {
@@ -357,6 +372,9 @@ class AdSupportedViewController : UIViewController,
     
     func interstitial(ad: GADInterstitial!, didFailToReceiveAdWithError error: GADRequestError!) {
         NSLog("interstitialAd (admob) didFailToReceiveAdWithError \(error)")
+        if adServiceMode == .GoogleAdMobWithAppleiAdFallback {
+            requestInterstitialAd()
+        }
     }
     
     
