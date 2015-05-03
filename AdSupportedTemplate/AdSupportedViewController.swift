@@ -9,13 +9,23 @@
 import Foundation
 import iAd
 import GoogleMobileAds
+import StoreKit
 
 class AdSupportedViewController : UIViewController,
                               ADBannerViewDelegate,
                           ADInterstitialAdDelegate,
                              GADBannerViewDelegate,
-                           GADInterstitialDelegate{
+                           GADInterstitialDelegate,
+              SKStoreProductViewControllerDelegate{
     
+    
+    
+//MARK: In-App-Purchase Properties
+    
+    var progressHUD :MBProgressHUD?
+    var product: SKProduct?
+    var persistence: RMStoreKeychainPersistence!
+    var productIdentifiers = [AnyObject]()
     
 //MARK: iAd Properties
     
@@ -77,7 +87,7 @@ class AdSupportedViewController : UIViewController,
         didSet {
             
             removeAdBannerView()
-            removeAdmMobBannerView()
+            removeAdMobBannerView()
 
             switch adServiceMode {
             case .AppleiAd:
@@ -131,6 +141,148 @@ class AdSupportedViewController : UIViewController,
         }, completion: { (context) -> Void in
         
         })
+    }
+    
+//MARK: In App Purchase
+    
+    func requestPurchase(productID:String, success: () -> Void, failure: (error: NSError) -> Void) {
+        var prodIdentifiers = Set<NSObject>()
+        prodIdentifiers.insert(productID)
+        
+        progressHUD = MBProgressHUD.showHUDAddedTo(self.view, animated: true)
+        progressHUD?.mode = MBProgressHUDMode.Indeterminate
+        progressHUD?.labelText = ""
+        progressHUD?.show(true)
+        
+        RMStore.defaultStore().requestProducts( prodIdentifiers, success: { (products, invalidProductIdentifiers) -> Void in
+            dispatch_async(dispatch_get_main_queue(),{
+                self.progressHUD?.hide(true)
+            })
+            NSLog("products loaded")
+            if products.count > 0 {
+                self.product = products[0] as? SKProduct
+                
+                dispatch_async(dispatch_get_main_queue(), {
+                    self.showPurchaseAlert(productID, success:success , failure:failure)
+                })
+                
+            }else{
+                failure(error:NSError(domain: "IAP", code: 0, userInfo: [NSLocalizedDescriptionKey:"Unable to load product"]))
+            }
+            
+            }) { (error) -> Void in
+                NSLog("error requesting IAPs: \(error.localizedDescription)")
+                dispatch_async(dispatch_get_main_queue(),{
+                    self.progressHUD?.hide(true)
+                })
+                failure(error: error)
+        }
+        
+    }
+    
+    func requestRestorePurchase(productID:String, success: () -> Void, failure: (error: NSError) -> Void) {
+    
+        
+        progressHUD = MBProgressHUD.showHUDAddedTo(self.view, animated: true)
+        progressHUD?.mode = MBProgressHUDMode.Indeterminate
+        //progressHUD?.labelText = "Remove Ads"
+        	
+        RMStore.defaultStore().restoreTransactionsOnSuccess({ (transactions) -> Void in
+            dispatch_async(dispatch_get_main_queue(),{
+                self.progressHUD?.hide(true)
+            })
+            
+            NSLog("transactions restored")
+            
+            let store = RMStore.defaultStore()
+            self.persistence = store.transactionPersistor as? RMStoreKeychainPersistence
+            self.productIdentifiers = (self.persistence.purchasedProductIdentifiers() as NSSet).allObjects
+            if self.persistence.isPurchasedProductOfIdentifier(productID) {
+                success()
+            }else {
+                failure(error:NSError(domain: "IAP", code: 0, userInfo: [NSLocalizedDescriptionKey:"Purchase not found"]))
+            }
+            
+        }, failure: { (error) -> Void in
+            dispatch_async(dispatch_get_main_queue(),{
+                self.progressHUD?.hide(true)
+            })
+            failure(error:error)
+        })
+        
+    }
+    
+    private func showPurchaseAlert(productID:String, success: () -> Void, failure: (error: NSError) -> Void) {
+        
+        if let product = product {
+            let numberFormatter = NSNumberFormatter()
+            numberFormatter.formatterBehavior = NSNumberFormatterBehavior.Behavior10_4
+            numberFormatter.numberStyle = NSNumberFormatterStyle.CurrencyStyle
+            numberFormatter.locale = product.priceLocale
+            let formattedString = numberFormatter.stringFromNumber(product.price)
+            
+            var alert = UIAlertController(title: product.localizedTitle, message: "\(product.localizedDescription) for \(formattedString!)?", preferredStyle: UIAlertControllerStyle.Alert)
+            alert.addAction(UIAlertAction(title: "Buy", style: UIAlertActionStyle.Default, handler: { (action) -> Void in
+                
+                self.progressHUD = MBProgressHUD.showHUDAddedTo(self.view, animated: true)
+                self.progressHUD?.mode = MBProgressHUDMode.Indeterminate
+                //self.progressHUD?.labelText = "Removing Ads"
+                self.progressHUD?.show(true)
+                
+                RMStore.defaultStore().addPayment(productID, success: { (transaction) -> Void in
+                    dispatch_async(dispatch_get_main_queue(),{
+                        self.progressHUD?.hide(true)
+                    })
+                    
+                        NSLog("Purchase made for \(productID)")
+                        success()
+                    
+                    }, failure: { (transaction, error) -> Void in
+                        dispatch_async(dispatch_get_main_queue(),{
+                            self.progressHUD?.hide(true)
+                        })
+                        NSLog("Error making purchase: \(error.localizedDescription)")
+                        failure(error:error)
+                })
+                
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel, handler: nil))
+            
+            presentViewController(alert, animated: true, completion: nil)
+            
+        }else{
+            failure(error:NSError(domain: "IAP", code: 0, userInfo: [NSLocalizedDescriptionKey:"Product not found"]))
+        }
+    }
+    
+    func showStoreView(appId: Int) {
+        NSLog("showStoreView: \(appId)")
+        NSLog("Note- this only works on a real device. It does not work on the Simulator")
+        
+        let storeViewController = SKStoreProductViewController()
+        storeViewController.delegate = self
+        
+        let parameters = [SKStoreProductParameterITunesItemIdentifier :
+            NSNumber(integer: appId)] //791588355
+        
+        storeViewController.loadProductWithParameters(parameters,
+            completionBlock: {result, error in
+                if result {
+                    self.presentViewController(storeViewController,
+                        animated: true, completion: nil)
+                }
+                if error != nil {
+                    println("error showing store view: \(error.localizedDescription)")
+                }
+                
+        })
+    
+    }
+    
+    func productViewControllerDidFinish(viewController:
+        SKStoreProductViewController!) {
+            viewController.dismissViewControllerAnimated(true,
+                completion: nil)
     }
     
 //MARK: Combined Ad Controls
@@ -440,7 +592,7 @@ class AdSupportedViewController : UIViewController,
     func interstitial(ad: GADInterstitial!, didFailToReceiveAdWithError error: GADRequestError!) {
         NSLog("interstitialAd (admob) didFailToReceiveAdWithError \(error)")
         if adServiceMode == .GoogleAdMobWithAppleiAdFallback {
-            requestInterstitialAd()
+            requestAppleInterstitialAd()
         }
     }
     
@@ -473,7 +625,7 @@ class AdSupportedViewController : UIViewController,
         
     }
     
-    func removeAdmMobBannerView() {
+    func removeAdMobBannerView() {
         adMobBannerView?.removeFromSuperview()
         adMobBannerView = nil
     }
