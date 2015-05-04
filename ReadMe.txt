@@ -10,6 +10,8 @@ If you have an existing project, you can also transfer the AdSupportedViewContro
 AdSupportedViewController.swift provides a UIViewController subclass that can display banner ads or interstitial/fullscreen ads. 
 To utilize ad support, simply set ViewControllers in your app as subclasses of AdSupportedViewController. Then specify they ad service you wish to use. 
 
+Banner Ads can be displayed along the top or bottom of the device. Includes ability to toggle ads on/off.
+
 The configuration of AdSupportedViewController is as follows. This can likely be placed in your viewDidLoad method. 
 
 /* *** Ad Supported View Controller superclass setup *** */
