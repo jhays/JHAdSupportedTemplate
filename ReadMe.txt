@@ -55,6 +55,19 @@ Pass in the product ID of the IAP item (as specified in iTunesConnect). requestP
 
 To test In App Purchases, you must be logged OUT of any real App Store accounts on the device. Set up a sandbox tester account in iTunes Connect. Run the app, and attempt to make the purchase. At that time, you will be prompted to log in- you must log in with the iTunes Connect sandbox tester account. 
 
+To check for existing purchase, utilize the persistence object that is specified on AppDelegate
+Example:
+//Check for existing purchase of ad removal
+        persistence = (UIApplication.sharedApplication().delegate as! AppDelegate).persistence
+        productIdentifiers = (persistence.purchasedProductIdentifiers() as NSSet).allObjects
+        var productID = "com.orbosphere.adsupportedtemplate.removeads"
+        if persistence.isPurchasedProductOfIdentifier(productID) {
+            NSLog("Purchase found- removing ads")
+            self.removeAdBannerView()
+            self.removeAdMobBannerView()
+        }else{
+            NSLog("Purchase not found.")
+        }
 
 Copyright 2015 Orbosphere
 www.orbosphere.com
