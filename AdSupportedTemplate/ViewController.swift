@@ -19,6 +19,8 @@ class ViewController: AdSupportedViewController {
         super.viewDidLoad()
 
 /* *** Ad Supported View Controller superclass setup *** */
+        
+        //adMobAdUnitId must be set to utilize Google AdMob ads
         adMobAdUnitId = "ca-app-pub-2935377384188916/5512719901"
  
         adMobTestDeviceIds = ["a3b05331603282d5c6a6c14df6c3b61c5d701563", "4a41294bc411c886e257f8e32c1d77a8d469c8e5"]
