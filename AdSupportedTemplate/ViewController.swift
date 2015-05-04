@@ -18,8 +18,6 @@ class ViewController: AdSupportedViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        
-        
 /* *** Ad Supported View Controller superclass setup *** */
         adMobAdUnitId = "ca-app-pub-2935377384188916/5512719901"
  
