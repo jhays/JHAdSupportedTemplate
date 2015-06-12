@@ -14,12 +14,12 @@ Banner Ads can be displayed along the top or bottom of the device. Includes abil
 
 The configuration of AdSupportedViewController is as follows. This can likely be placed in your viewDidLoad method. 
 
-/* *** Ad Supported View Controller superclass setup *** */
-        adMobAdUnitId = "ca-app-pub-2935377384188916/5512719901"
+// * Ad Supported View Controller superclass setup 
+        //adMobAdUnitId = "ca-app-pub-2935377384188916/5512719901"
  
-        adMobTestDeviceIds = ["a3b05331603282d5c6a6c14df6c3b61c5d701563", "4a41294bc411c886e257f8e32c1d77a8d469c8e5"]
+        //adMobTestDeviceIds = ["a3b05331603282d5c6a6c14df6c3b61c5d701563", "4a41294bc411c886e257f8e32c1d77a8d469c8e5"]
         
-        //OPTIONAL: AdMob Targeting. Uncomment to setup different types of targeting. Applies to Google AdMob adds only.
+        //* OPTIONAL: AdMob Targeting. Uncomment to setup different types of targeting. Applies to Google AdMob adds only.
         
         //adMobTargetBirthdate = NSDate(timeIntervalSinceReferenceDate: 86400)
         //adMobTargetLocationLatitude = 44.9778
@@ -38,7 +38,7 @@ The configuration of AdSupportedViewController is as follows. This can likely be
         
         adServiceMode = AdServiceMode.AppleiAd
 
-/* *** End of Ad Supported View Controller superclass setup *** */
+// *** End of Ad Supported View Controller superclass setup *** */
 
 
 Copyright 2015 Orbosphere
