@@ -14,7 +14,7 @@ Banner Ads can be displayed along the top or bottom of the device. Includes abil
 
 The configuration of AdSupportedViewController is as follows. This can likely be placed in your viewDidLoad method. 
 
- * Ad Supported View Controller superclass setup 
+ * Ad Supported View Controller superclass setup: 
  
         //adMobAdUnitId = "ca-app-pub-2935377384188916/5512719901"
  
@@ -39,9 +39,7 @@ The configuration of AdSupportedViewController is as follows. This can likely be
         
         adServiceMode = AdServiceMode.AppleiAd
 
-// *** End of Ad Supported View Controller superclass setup *** */
 
-
-Copyright 2015 Orbosphere
+Created By Orbosphere
 www.orbosphere.com
 
