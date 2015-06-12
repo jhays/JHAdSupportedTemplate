@@ -1,8 +1,6 @@
 #Ad Supported Template - Swift, iOS 7.1, iOS 8+
-##iPhone, iPad, Universal device and orientation support
-Dual Ad Service Implementation- 
-Apple iAd
-Google AdMob (Includes user targeting options)
+####iPhone, iPad, Universal device and orientation support
+####Dual Ad Service Implementation- Apple iAd/Google AdMob (AdMob Includes user targeting options)
 
 Utilize this project template to monetize your app with Ads and In-App-Purchases (IAP available on the in-app-purchases branch).
 
