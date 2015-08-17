@@ -12,25 +12,59 @@ import GoogleMobileAds
 import StoreKit
 
 class AdSupportedViewController : UIViewController,
-                              ADBannerViewDelegate,
-                          ADInterstitialAdDelegate,
-                             GADBannerViewDelegate,
-                           GADInterstitialDelegate,
-              SKStoreProductViewControllerDelegate{
+    ADBannerViewDelegate,
+    ADInterstitialAdDelegate,
+    GADBannerViewDelegate,
+    GADInterstitialDelegate,
+SKStoreProductViewControllerDelegate{
     
+    //MARK:Helpers
+    var adBannerIsLoaded = false {
+        didSet{
+            self.adjustViewForBannerView()
+        }
+    }
+    var adMobBannerIsLoaded = false {
+        didSet {
+            self.adjustViewForBannerView()
+        }
+    }
     
+    var adBannerBuffer: Int {
+        get {
+            var multiplier = CGFloat(1)
+            
+            if self.isAdMobBannerDisplaying || self.isIAdBannerDisplaying {
+                if self.isIAdBannerDisplaying {
+                    return Int(self.adBannerView!.frame.size.height * multiplier)
+                }else if self.isAdMobBannerDisplaying {
+                    return Int(self.adMobBannerView!.frame.size.height * multiplier)
+                }else {
+                    return 0
+                }
+            }else {
+                return 0
+            }
+        }
+    }
     
-//MARK: In-App-Purchase Properties
+    //MARK: In-App-Purchase Properties
     
     var progressHUD :MBProgressHUD?
     var product: SKProduct?
     var persistence: RMStoreKeychainPersistence!
     var productIdentifiers = [AnyObject]()
     
-//MARK: iAd Properties
+    //MARK: iAd Properties
     
     //iAd Banner
-    var isIAdBannerDisplaying = false
+    var isIAdBannerDisplaying = false {
+        didSet{
+            self.adjustViewForBannerView()
+        }
+    }
+    
+    
     var adBannerView: ADBannerView?
     var adBannerViewTopConstraint: NSLayoutConstraint!
     var adBannerViewBottomConstraint: NSLayoutConstraint!
@@ -42,7 +76,7 @@ class AdSupportedViewController : UIViewController,
     var interstitialCloseButton:UIButton!
     var interstitialTimer: NSTimer?
     
-//MARK: AdMob Properties
+    //MARK: AdMob Properties
     
     //Google AdMob Banner
     
@@ -88,14 +122,14 @@ class AdSupportedViewController : UIViewController,
             
             removeAdBannerView()
             removeAdMobBannerView()
-
+            
             switch adServiceMode {
             case .AppleiAd:
                 NSLog("Ad Service Mode: Apple iAd")
                 
             case .GoogleAdMob:
                 if let adMobAdUnitId = adMobAdUnitId {
-                        NSLog("Ad Service Mode: Google AdMob")
+                    NSLog("Ad Service Mode: Google AdMob")
                 }else {
                     NSLog("Google AdMob AdUnitId is NOT SET! Defaulting to Apple iAd mode")
                     adServiceMode = .AppleiAd
@@ -126,24 +160,28 @@ class AdSupportedViewController : UIViewController,
             updateAdMobConstraints()
         }
     }
-
-//MARK: View Lifecycle
+    
+    //MARK: View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         interstitialPresentationPolicy = ADInterstitialPresentationPolicy.Manual
         NSLog("Google Mobile Ads SDK Version: \(GADRequest.sdkVersion())")
     }
-
+    
     override func willTransitionToTraitCollection(newCollection: UITraitCollection, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
         NSLog("transition to trait collection: \(newCollection)")
         coordinator.animateAlongsideTransition({ (context) -> Void in
-
-        }, completion: { (context) -> Void in
-        
+            
+            }, completion: { (context) -> Void in
+                
         })
     }
     
-//MARK: In App Purchase
+    func adjustViewForBannerView() {
+        //override this function in your subclasses, use the "adBannerBuffer" property to get the space you need to allow for the banner view
+    }
+    
+    //MARK: In App Purchase
     
     func requestPurchase(productID:String, success: () -> Void, failure: (error: NSError) -> Void) {
         var prodIdentifiers = Set<NSObject>()
@@ -181,12 +219,12 @@ class AdSupportedViewController : UIViewController,
     }
     
     func requestRestorePurchase(productID:String, success: () -> Void, failure: (error: NSError) -> Void) {
-    
+        
         
         progressHUD = MBProgressHUD.showHUDAddedTo(self.view, animated: true)
         progressHUD?.mode = MBProgressHUDMode.Indeterminate
         //progressHUD?.labelText = "Remove Ads"
-        	
+        
         RMStore.defaultStore().restoreTransactionsOnSuccess({ (transactions) -> Void in
             dispatch_async(dispatch_get_main_queue(),{
                 self.progressHUD?.hide(true)
@@ -203,11 +241,11 @@ class AdSupportedViewController : UIViewController,
                 failure(error:NSError(domain: "IAP", code: 0, userInfo: [NSLocalizedDescriptionKey:"Purchase not found"]))
             }
             
-        }, failure: { (error) -> Void in
-            dispatch_async(dispatch_get_main_queue(),{
-                self.progressHUD?.hide(true)
-            })
-            failure(error:error)
+            }, failure: { (error) -> Void in
+                dispatch_async(dispatch_get_main_queue(),{
+                    self.progressHUD?.hide(true)
+                })
+                failure(error:error)
         })
         
     }
@@ -234,8 +272,8 @@ class AdSupportedViewController : UIViewController,
                         self.progressHUD?.hide(true)
                     })
                     
-                        NSLog("Purchase made for \(productID)")
-                        success()
+                    NSLog("Purchase made for \(productID)")
+                    success()
                     
                     }, failure: { (transaction, error) -> Void in
                         dispatch_async(dispatch_get_main_queue(),{
@@ -276,7 +314,7 @@ class AdSupportedViewController : UIViewController,
                 }
                 
         })
-    
+        
     }
     
     func productViewControllerDidFinish(viewController:
@@ -285,7 +323,7 @@ class AdSupportedViewController : UIViewController,
                 completion: nil)
     }
     
-//MARK: Combined Ad Controls
+    //MARK: Combined Ad Controls
     
     func setupBannerAd() {
         switch adServiceMode {
@@ -329,11 +367,11 @@ class AdSupportedViewController : UIViewController,
     }
     
     func adMobSizeForTraitCollection(traitCollection:UITraitCollection) {
-
+        
         ADBannerView(adType: ADAdType.Banner)// ADBannerContentSizeIdentifier320x50
     }
     
-//MARK: ADInterstitialAd
+    //MARK: ADInterstitialAd
     
     func requestAppleInterstitialAd() {
         NSLog("requestInterstitialAd")
@@ -341,7 +379,7 @@ class AdSupportedViewController : UIViewController,
         interstitialAd.delegate = self
     }
     
-//MARK: AdInterstitialAdDelegate⍜
+    //MARK: AdInterstitialAdDelegate⍜
     
     func closeInterstitialAd() {
         NSLog("closeInterstitialAd")
@@ -404,7 +442,7 @@ class AdSupportedViewController : UIViewController,
         interstitialCloseButton.removeFromSuperview()
     }
     
-//MARK: ADBannerView
+    //MARK: ADBannerView
     
     func setupAdBannerView() {
         NSLog("setupAdBannerView")
@@ -443,7 +481,7 @@ class AdSupportedViewController : UIViewController,
             if adBannerView != nil {
                 var constant = -adBannerView!.frame.height
                 if isIAdBannerDisplaying {
-                    constant = 0.0
+                    constant = 20.0
                 }
                 adBannerViewCenterHorizontalConstraint = NSLayoutConstraint(item: self.view, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal, toItem: adBannerView, attribute: NSLayoutAttribute.CenterX, multiplier: 1.0, constant: 0)
                 adBannerViewTopConstraint = NSLayoutConstraint(item: adBannerView!, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.view, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
@@ -459,7 +497,7 @@ class AdSupportedViewController : UIViewController,
                 adBannerViewBottomConstraint = NSLayoutConstraint(item: adBannerView!, attribute: NSLayoutAttribute.Bottom, relatedBy: NSLayoutRelation.Equal, toItem: bottomLayoutGuide, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
                 view.addConstraints([adBannerViewCenterHorizontalConstraint, adBannerViewBottomConstraint])
             }
-            default:
+        default:
             adBannerLocation = .Top
             updateIAdConstraints()
         }
@@ -480,7 +518,7 @@ class AdSupportedViewController : UIViewController,
                         adBannerViewTopConstraint.constant = -adBannerView.frame.height
                         tempIsIAdBannerDisplaying = false
                     }else{
-                        adBannerViewTopConstraint.constant = 0
+                        adBannerViewTopConstraint.constant = 20
                         tempIsIAdBannerDisplaying = true
                     }
                 }
@@ -501,18 +539,22 @@ class AdSupportedViewController : UIViewController,
             
             UIView.animateWithDuration(0.4, delay: 0.0, options: UIViewAnimationOptions.CurveEaseInOut, animations: { () -> Void in
                 self.view.layoutIfNeeded()
-            }) { (success) -> Void in
-                self.isIAdBannerDisplaying = tempIsIAdBannerDisplaying
-                if self.isIAdBannerDisplaying == false {
-                    if self.adBannerView != nil {
-                        self.adBannerView!.hidden = true
+                }) { (success) -> Void in
+                    self.isIAdBannerDisplaying = tempIsIAdBannerDisplaying
+                    if self.isIAdBannerDisplaying == false {
+                        if self.adBannerView != nil {
+                            self.adBannerView!.hidden = true
+                        }
                     }
-                }
             }
         }
     }
     
-//MARK: ADBannerViewDelegate
+    //MARK: ADBannerViewDelegate
+    
+    func bannerViewDidLoadAd(banner: ADBannerView!) {
+        adBannerIsLoaded = true
+    }
     
     func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
         NSLog("bannerView didFail: \(error.localizedDescription)")
@@ -524,7 +566,7 @@ class AdSupportedViewController : UIViewController,
     }
     
     
-//MARK: AdMob
+    //MARK: AdMob
     
     
     func setAdMobTargetLocation(longitude: CGFloat, latitude: CGFloat, accuracy: CGFloat) {
@@ -604,21 +646,23 @@ class AdSupportedViewController : UIViewController,
         NSLog("setupAdmobBannerView")
         
         if let adUnitId = adMobAdUnitId {
-            let request = setupAdMobRequest()
-            
-            adMobBannerView = GADBannerView(adSize: kGADAdSizeSmartBannerPortrait, origin: CGPointMake(0, 0))
-            adMobBannerView!.setTranslatesAutoresizingMaskIntoConstraints(false)
-            
-            adMobBannerView!.adUnitID = adMobAdUnitId
-            
-            adMobBannerView!.rootViewController = self
-            adMobBannerView!.delegate = self
-            
-            adMobBannerView!.loadRequest(request)
-            
-            view.addSubview(adMobBannerView!)
-            isAdMobBannerDisplaying = true
-            updateAdMobConstraints()
+            if adMobBannerView == nil {
+                let request = setupAdMobRequest()
+                
+                adMobBannerView = GADBannerView(adSize: kGADAdSizeSmartBannerPortrait, origin: CGPointMake(0, 0))
+                adMobBannerView!.setTranslatesAutoresizingMaskIntoConstraints(false)
+                
+                adMobBannerView!.adUnitID = adMobAdUnitId
+                
+                adMobBannerView!.rootViewController = self
+                adMobBannerView!.delegate = self
+                
+                adMobBannerView!.loadRequest(request)
+                
+                view.addSubview(adMobBannerView!)
+                isAdMobBannerDisplaying = true
+                updateAdMobConstraints()
+            }
         }else {
             NSLog("ERROR: cannot setup AdMobBannerView - adMobAdUnitId is not set.")
         }
@@ -646,7 +690,7 @@ class AdSupportedViewController : UIViewController,
             if adMobBannerView != nil {
                 var constant = -adMobBannerView!.frame.height
                 if isAdMobBannerDisplaying {
-                    constant = 0
+                    constant = 20
                 }
                 adMobBannerViewCenterHorizontalConstraint = NSLayoutConstraint(item: self.view, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal, toItem: adMobBannerView, attribute: NSLayoutAttribute.CenterX, multiplier: 1.0, constant: 0)
                 adMobBannerViewTopConstraint = NSLayoutConstraint(item: adMobBannerView!, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.view, attribute: NSLayoutAttribute.Top, multiplier: 1.0, constant: constant)
@@ -673,7 +717,7 @@ class AdSupportedViewController : UIViewController,
     func toggleAdMobBannerAd()  {
         NSLog("toggleAdMobBannerAd")
         if let adMobBannerView = self.adMobBannerView {
-        
+            
             var tempIsAdMobBannerDisplaying = isAdMobBannerDisplaying
             adMobBannerView.hidden = false
             
@@ -684,7 +728,7 @@ class AdSupportedViewController : UIViewController,
                         adMobBannerViewTopConstraint.constant = -adMobBannerView.frame.height
                         tempIsAdMobBannerDisplaying = false
                     }else{
-                        adMobBannerViewTopConstraint.constant = 0
+                        adMobBannerViewTopConstraint.constant = 20
                         tempIsAdMobBannerDisplaying = true
                     }
                 }
@@ -709,15 +753,15 @@ class AdSupportedViewController : UIViewController,
                     self.isAdMobBannerDisplaying = tempIsAdMobBannerDisplaying
                     if self.isAdMobBannerDisplaying == false {
                         if self.adMobBannerView != nil {
-                           self.adMobBannerView!.hidden = true
+                            self.adMobBannerView!.hidden = true
                         }
                     }
             }
         }
-
+        
     }
     
-//MARK: GADBannerViewDelegate
+    //MARK: GADBannerViewDelegate
     
     func adView(view: GADBannerView!, didFailToReceiveAdWithError error: GADRequestError!) {
         NSLog("adView didFailToReceiveAdWithError \(GADRequestError.description())")
@@ -733,6 +777,7 @@ class AdSupportedViewController : UIViewController,
     
     func adViewDidReceiveAd(view: GADBannerView!) {
         NSLog("adViewDidReceiveAd")
+        adMobBannerIsLoaded = true
     }
     
     func adViewWillDismissScreen(adView: GADBannerView!) {
@@ -747,4 +792,4 @@ class AdSupportedViewController : UIViewController,
         NSLog("adViewWillPresentScreen")
     }
     
-  }
+}
