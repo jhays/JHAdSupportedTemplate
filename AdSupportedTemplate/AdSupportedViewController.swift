@@ -47,7 +47,7 @@ SKStoreProductViewControllerDelegate{
             }
         }
     }
-
+    
     
     //MARK: iAd Properties
     
@@ -172,10 +172,10 @@ SKStoreProductViewControllerDelegate{
     }
     
     func adjustViewForBannerView() {
-        //override this function in your subclasses, use the "adBannerBuffer" property to get the space you need to allow for the banner view
+        
     }
     
-       //MARK: Combined Ad Controls
+    //MARK: Combined Ad Controls
     
     func setupBannerAd() {
         switch adServiceMode {
