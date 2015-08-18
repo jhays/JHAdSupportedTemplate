@@ -1,9 +1,9 @@
-Ad Supported Template - Swift, iOS 7.1, iOS 8+, iPhone, iPad, Universal device and orientation support
-Dual Ad Service Implementation- 
-Apple iAd
-Google AdMob (Includes user targeting options)
+#Ad Supported Template - Swift, iOS 7.1, iOS 8+
+####iPhone, iPad, Universal device and orientation support
+####Dual Ad Service Implementation- Apple iAd/Google AdMob (AdMob Includes user targeting options)
 
-Utilize this project template to monetize your app with Ads and In-App-Purchases. 
+Utilize this project template to monetize your app with Ads and In-App-Purchases (IAP available on the in-app-purchase branch).
+
 
 If you have an existing project, you can also transfer the AdSupportedViewController into your own project. 
 
@@ -14,19 +14,20 @@ Banner Ads can be displayed along the top or bottom of the device. Includes abil
 
 The configuration of AdSupportedViewController is as follows. This can likely be placed in your viewDidLoad method. 
 
-/* *** Ad Supported View Controller superclass setup *** */
+ * Ad Supported View Controller superclass setup: 
+ ```Swift
         adMobAdUnitId = "ca-app-pub-2935377384188916/5512719901"
  
         adMobTestDeviceIds = ["a3b05331603282d5c6a6c14df6c3b61c5d701563", "4a41294bc411c886e257f8e32c1d77a8d469c8e5"]
         
-        //OPTIONAL: AdMob Targeting. Uncomment to setup different types of targeting. Applies to Google AdMob adds only.
+        //* OPTIONAL: AdMob Targeting. Uncomment to setup different types of targeting. Applies to Google AdMob adds only.
         
-        //adMobTargetBirthdate = NSDate(timeIntervalSinceReferenceDate: 86400)
-        //adMobTargetLocationLatitude = 44.9778
-        //adMobTargetLocationLongitude = 93.2650
-        //adMobTargetLocationString = "55401"
-        //adMobTargetGender = AdMobTargetGenders.Male
-        //adMobTargetForChildren = true
+        adMobTargetBirthdate = NSDate(timeIntervalSinceReferenceDate: 86400)
+        adMobTargetLocationLatitude = 44.9778
+        adMobTargetLocationLongitude = 93.2650
+        adMobTargetLocationString = "55401"
+        adMobTargetGender = AdMobTargetGenders.Male
+        adMobTargetForChildren = true
         
 
         //REQUIRED: Simply set the adServiceMode property to activate banner ads
@@ -37,10 +38,8 @@ The configuration of AdSupportedViewController is as follows. This can likely be
             //.GoogleAdMobWithAppleiAdFallback //If Google AdMob fails to load, Apple iAd service will be loaded instead
         
         adServiceMode = AdServiceMode.AppleiAd
+```
 
-/* *** End of Ad Supported View Controller superclass setup *** */
-
-
-Copyright 2015 Orbosphere
+Created By Orbosphere
 www.orbosphere.com
 
