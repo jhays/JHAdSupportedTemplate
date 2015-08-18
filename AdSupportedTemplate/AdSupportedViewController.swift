@@ -178,7 +178,7 @@ SKStoreProductViewControllerDelegate{
     }
     
     func adjustViewForBannerView() {
-        //override this function in your subclasses, use the "adBannerBuffer" property to get the space you need to allow for the banner view
+        
     }
     
     //MARK: In App Purchase
